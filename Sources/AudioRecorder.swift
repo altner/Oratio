@@ -64,9 +64,25 @@ final class AudioRecorder {
     }
 
     /// Begin capturing. Seeds captureBuffer with the current ring-buffer contents
-    /// (pre-roll) so the first word is never cut off.
+    /// (pre-roll) so the first word is never cut off. If the ring buffer is cold
+    /// (engine just started), briefly waits for at least one tap buffer to arrive.
     func startCapture() {
         cancelSleep()
+
+        // Cold-start safety: on the very first press after a teardown/launch,
+        // the ring buffer is empty and the tap needs ~50–200 ms to deliver its
+        // first chunk. Busy-poll up to 400 ms so short hotkey presses still
+        // yield usable audio. This only waits on the cold path — subsequent
+        // presses within sleepDelay hit zero wait.
+        let start = Date()
+        while Date().timeIntervalSince(start) < 0.4 {
+            lock.lock()
+            let haveSamples = !ringBuffer.isEmpty
+            lock.unlock()
+            if haveSamples { break }
+            Thread.sleep(forTimeInterval: 0.02)
+        }
+
         lock.lock()
         captureBuffer.removeAll(keepingCapacity: true)
         captureBuffer.append(contentsOf: ringBuffer)

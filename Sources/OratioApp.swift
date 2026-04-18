@@ -105,8 +105,10 @@ final class OratioAppDelegate: NSObject, NSApplicationDelegate {
         let samples = audio.stopCapture()
 
         // Guard against accidental quick taps: Whisper + the OpenAI API both
-        // reject/hallucinate on near-silent/sub-100ms clips. Require ~0.5 s.
-        if samples.count < 8_000 {
+        // reject/hallucinate on near-silent/sub-100ms clips. 0.25 s is the
+        // sweet spot — long enough to weed out accidental taps, short enough
+        // that first-recording-after-cold-start still makes it through.
+        if samples.count < 4_000 {
             state.recordingState = .idle
             state.lastError = "Aufnahme zu kurz – bitte die Taste länger halten."
             return
