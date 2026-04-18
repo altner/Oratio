@@ -45,7 +45,8 @@ Siehe die [Projekt-Website](https://adrianaltner.github.io/Oratio/) (GitHub Page
 
 ## Quickstart — selbst bauen
 
-> Ausführliche Schritt-für-Schritt-Anleitung mit Troubleshooting siehe **[INSTALL.md](INSTALL.md)**.
+> - Ausführliche Installation & Troubleshooting: **[INSTALL.md](INSTALL.md)**
+> - GitHub-Workflow (Repo anlegen, Pages, Releases): **[GITHUB.md](GITHUB.md)**
 
 ### Voraussetzungen
 
