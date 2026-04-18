@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oratio — Push-to-Talk Diktieren für macOS</title>
+    <meta name="description" content="Oratio ist eine native macOS Menüleisten-App für Diktieren in beliebige Apps. Mit lokalem Whisper oder Cloud-API, optionaler LLM-Nachbearbeitung und Push-to-Talk.">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #141420;
+            --surface-2: #1e1e2e;
+            --border: #2a2a3a;
+            --text: #e8e8ee;
+            --text-muted: #888899;
+            --accent: #9e7bff;
+            --accent-dim: #9e7bff20;
+            --indigo: #5B6EFF;
+            --green: #34d058;
+            --orange: #f0883e;
+            --red: #ff5e6e;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+        .container-wide { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+        /* Nav */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+            padding: 12px 0;
+        }
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        nav .logo {
+            font-weight: 700;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        nav .logo img {
+            width: 24px;
+            height: 24px;
+            border-radius: 5px;
+        }
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        nav a:hover { color: var(--text); }
+        nav .links { display: flex; gap: 24px; }
+
+        /* Hero */
+        .hero {
+            padding: 140px 0 80px;
+            text-align: center;
+        }
+        .hero .icon {
+            width: 128px;
+            height: 128px;
+            border-radius: 28px;
+            margin-bottom: 32px;
+            box-shadow: 0 8px 40px rgba(158, 123, 255, 0.25);
+        }
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1.5px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+        .hero .tagline {
+            font-size: 20px;
+            color: var(--text-muted);
+            max-width: 560px;
+            margin: 0 auto 32px;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+
+        .cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 24px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--indigo), var(--accent));
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 28px rgba(158, 123, 255, 0.4);
+        }
+
+        /* Sections */
+        section { padding: 64px 0; }
+        section h2 {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-bottom: 12px;
+        }
+        section .subtitle {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        /* Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+        }
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .feature-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        .feature-card .icon-sm { font-size: 28px; margin-bottom: 12px; }
+        .feature-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+        .feature-card p { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+
+        /* Diagrams */
+        .diagram-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+        .diagram-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 24px; }
+        .mermaid { display: flex; justify-content: center; }
+
+        /* Mermaid-Diagramme lesbarer machen: größere, kräftigere Schrift */
+        .mermaid svg .nodeLabel,
+        .mermaid svg .edgeLabel,
+        .mermaid svg foreignObject span.nodeLabel,
+        .mermaid svg foreignObject span.edgeLabel,
+        .mermaid svg text {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif !important;
+            font-size: 15px !important;
+            font-weight: 500 !important;
+            color: #f4f4fa !important;
+            fill: #f4f4fa !important;
+            letter-spacing: 0.1px;
+        }
+        .mermaid svg .node rect,
+        .mermaid svg .node polygon,
+        .mermaid svg .node circle,
+        .mermaid svg .cluster rect {
+            stroke-width: 1.5px !important;
+        }
+        .mermaid svg .edgeLabel {
+            background-color: #1e1e2e !important;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .mermaid svg .edgeLabel rect,
+        .mermaid svg .edgeLabel foreignObject > div {
+            background-color: rgba(30, 30, 46, 0.9) !important;
+        }
+
+        /* Tech */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .tech-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+        }
+        .tech-item .label { font-size: 14px; font-weight: 500; }
+        .tech-item .desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Table */
+        .state-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .state-table th {
+            text-align: left;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .state-table td { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+        .state-table code {
+            background: var(--surface-2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            color: var(--accent);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 32px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 32px; }
+            .hero .tagline { font-size: 17px; }
+            section h2 { font-size: 24px; }
+            .diagram-card { padding: 16px; }
+            nav .links { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <div class="logo">
+            <img src="app-icon.png" alt="Oratio Icon">
+            Oratio
+        </div>
+        <div class="links">
+            <a href="#features">Features</a>
+            <a href="#workflow">Workflow</a>
+            <a href="#architecture">Architektur</a>
+            <a href="#tech">Tech Stack</a>
+        </div>
+    </div>
+</nav>
+
+<header class="hero">
+    <div class="container">
+        <img src="app-icon.png" alt="Oratio App Icon" class="icon">
+        <h1>Oratio</h1>
+        <p class="tagline">Push-to-Talk Diktieren für macOS. Whisper lokal oder Cloud, optionale LLM-Nachbearbeitung — in jede App, per globalem Tastenkürzel.</p>
+        <span class="badge">
+            <span class="dot"></span>
+            Apple Silicon &middot; macOS 14+ &middot; SwiftUI &middot; WhisperKit
+        </span>
+    </div>
+</header>
+
+<section id="features">
+    <div class="container">
+        <h2>Features</h2>
+        <p class="subtitle">Eine kleine, fokussierte Menüleisten-App für schnelles Diktieren.</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon-sm">🎙️</div>
+                <h3>Push-to-Talk &amp; Toggle</h3>
+                <p>Taste halten und sprechen oder einmal tippen = Start, nochmal = Stop. 300 ms Pre-Roll-Puffer gegen verlorene Wortanfänge.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">🧠</div>
+                <h3>Zwei STT-Backends</h3>
+                <p>Lokal via WhisperKit (Whisper Large v3 Turbo, Apple Neural Engine) oder beliebige OpenAI-kompatible Cloud-API.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">✨</div>
+                <h3>LLM-Nachbearbeitung</h3>
+                <p>Rechtschreibung &amp; Grammatik, Professioneller Stil, Höfliche Umformulierung oder eigener Prompt — editierbar &amp; zurücksetzbar.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">🌐</div>
+                <h3>Multi-Provider</h3>
+                <p>Presets für OpenAI, Groq, OpenRouter oder eigenen Host. Transkription und Nachbearbeitung unabhängig konfigurierbar.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">🔇</div>
+                <h3>Füllwort-Filter</h3>
+                <p>„ähm", „öh", „hmm" und Varianten werden per Regex entfernt — schnell, offline, ohne LLM-Kosten.</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon-sm">🔐</div>
+                <h3>Keychain-Sicherheit</h3>
+                <p>API-Keys werden im macOS-Schlüsselbund gespeichert — separate Einträge für Transkription &amp; Nachbearbeitung möglich.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="workflow">
+    <div class="container">
+        <h2>Workflow</h2>
+        <p class="subtitle">Vom Tastendruck bis zum eingefügten Text.</p>
+
+        <div class="diagram-card">
+            <h3>Diktier-Pipeline</h3>
+            <pre class="mermaid">
+flowchart TD
+    A["⌥Leertaste gedrückt"] --> B["🎯 Frontmost App merken"]
+    B --> C["🎙️ Engine starten (lazy)"]
+    C --> D["🔴 Aufnahme + Pre-Roll 300 ms"]
+    D --> E["⌥Leertaste losgelassen"]
+    E --> F["⏹️ Stop + Samples"]
+    F --> G{"Samples ≥ 0.5 s?"}
+    G -- Nein --> ZZ["⚠️ 'Zu kurz' Hinweis"]
+    G -- Ja --> H{"Backend?"}
+    H -- Lokal --> I["🧠 WhisperKit
+(Neural Engine)"]
+    H -- Cloud --> J["☁️ POST /audio/
+transcriptions"]
+    I --> K{"Füllwörter
+entfernen?"}
+    J --> K
+    K -- Ja --> L["🔇 Regex-Cleanup"]
+    K -- Nein --> M
+    L --> M{"Korrektur-
+Modus?"}
+    M -- Aus --> P
+    M -- Ein --> N["✨ POST /chat/
+completions"]
+    N --> P["📋 Clipboard setzen"]
+    P --> Q["⌘V via CGEvent"]
+    Q --> R["♻️ Clipboard
+wiederherstellen"]
+    R --> S["✅ Fertig"]
+
+    style A fill:#2a1a5c,stroke:#9e7bff,color:#e8e8ee
+    style D fill:#5c1a1a,stroke:#ff5e6e,color:#e8e8ee
+    style S fill:#1a5c2a,stroke:#34d058,color:#e8e8ee
+            </pre>
+        </div>
+
+        <div class="diagram-card">
+            <h3>State Machine — RecordingState</h3>
+            <pre class="mermaid">
+stateDiagram-v2
+    [*] --> idle
+    idle --> recording : Hotkey down (PTT)\nor Toggle
+    recording --> transcribing : Hotkey up\nor Toggle stop
+    recording --> idle : Audio < 0.5 s
+    transcribing --> idle : Paste done\nor error
+    idle --> idle : Auto-sleep 30 s\nEngine teardown
+            </pre>
+        </div>
+    </div>
+</section>
+
+<section id="architecture">
+    <div class="container">
+        <h2>Architektur</h2>
+        <p class="subtitle">NSApplicationDelegateAdaptor als Coordinator, SwiftUI-Observation für den State.</p>
+
+        <div class="diagram-card">
+            <h3>Komponenten-Übersicht</h3>
+            <pre class="mermaid">
+graph TD
+    subgraph UI["UI"]
+        MBE["MenuBarExtra
+(Popover + Label)"]
+        STG["Settings
+(3 Tabs)"]
+    end
+
+    subgraph COORD["Coordinator"]
+        DEL["OratioAppDelegate"]
+        AS["AppState
+(@Observable)"]
+    end
+
+    subgraph INPUT["Input"]
+        HK["HotkeyManager
+(KeyboardShortcuts)"]
+        AR["AudioRecorder
+(AVAudioEngine)"]
+    end
+
+    subgraph STT["Transcription"]
+        TS["TranscriptionService
+(Router)"]
+        LB["LocalWhisperBackend
+(WhisperKit)"]
+        OB["OpenAIBackend
+(URLSession)"]
+    end
+
+    subgraph POST["Post-Processing"]
+        FC["FillerCleaner
+(Regex)"]
+        CS["CorrectionService
+(Chat Completions)"]
+    end
+
+    subgraph OUT["Output"]
+        TI["TextInserter
+(CGEvent ⌘V)"]
+    end
+
+    subgraph STORE["Storage"]
+        UD["UserDefaults"]
+        KC["Keychain"]
+        HF["~/Documents/
+huggingface"]
+    end
+
+    MBE --> AS
+    STG --> AS
+    DEL --> HK
+    DEL --> AR
+    DEL --> TS
+    DEL --> CS
+    HK --> AR
+    AR --> TS
+    TS --> LB
+    TS --> OB
+    TS --> FC
+    FC --> CS
+    CS --> TI
+    LB --> HF
+    OB --> KC
+    CS --> KC
+    STG --> UD
+
+    style UI fill:#1a2a3a,stroke:#5e9eff,color:#e8e8ee
+    style COORD fill:#2a1a5c,stroke:#9e7bff,color:#e8e8ee
+    style STT fill:#1a3a2a,stroke:#34d058,color:#e8e8ee
+    style POST fill:#3a2a1a,stroke:#f0883e,color:#e8e8ee
+    style OUT fill:#3a1a2a,stroke:#ff5e6e,color:#e8e8ee
+            </pre>
+        </div>
+
+        <div class="diagram-card">
+            <h3>Audio-Pfad — Pre-Warm &amp; Pre-Roll</h3>
+            <pre class="mermaid">
+flowchart TD
+    MIC["🎤 Microphone"] --> TAP["AVAudioEngine Input Tap"]
+    TAP --> HP["1-Pol Hochpass @ 60 Hz"]
+    HP --> CONV["Converter → 16 kHz Mono Float32"]
+    CONV --> RING["Ringpuffer (300 ms, immer aktiv)"]
+    CONV --> CAP["Capture-Buffer (während aktiv)"]
+    RING -.->|"auf PTT-Start einmal kopieren"| PREROLL["Pre-Roll in Capture-Buffer"]
+    PREROLL --> CAP
+    CAP --> OUT["[Float] Samples @ 16 kHz"]
+
+    style MIC fill:#5c1a1a,stroke:#ff5e6e,color:#e8e8ee
+    style RING fill:#2a1a5c,stroke:#9e7bff,color:#e8e8ee
+    style OUT fill:#1a5c2a,stroke:#34d058,color:#e8e8ee
+            </pre>
+        </div>
+    </div>
+</section>
+
+<section id="tech">
+    <div class="container">
+        <h2>Tech Stack</h2>
+        <p class="subtitle">Swift + SwiftUI, zwei externe SwiftPM-Pakete, sonst alles Apple-nativ.</p>
+
+        <div class="tech-grid">
+            <div class="tech-item">
+                <div class="label">SwiftUI</div>
+                <div class="desc">Menüleiste, Settings, @Observable State</div>
+            </div>
+            <div class="tech-item">
+                <div class="label">WhisperKit</div>
+                <div class="desc">Whisper Large v3 Turbo auf Apple Silicon</div>
+            </div>
+            <div class="tech-item">
+                <div class="label">KeyboardShortcuts</div>
+                <div class="desc">Globale, konfigurierbare Hotkeys (Sindre Sorhus)</div>
+            </div>
+            <div class="tech-item">
+                <div class="label">AVFoundation</div>
+                <div class="desc">AVAudioEngine, Tap, Konvertierung</div>
+            </div>
+            <div class="tech-item">
+                <div class="label">CoreGraphics</div>
+                <div class="desc">CGEvent für simuliertes ⌘V</div>
+            </div>
+            <div class="tech-item">
+                <div class="label">Security</div>
+                <div class="desc">Keychain Services für API-Keys</div>
+            </div>
+            <div class="tech-item">
+                <div class="label">XcodeGen</div>
+                <div class="desc">project.yml → Oratio.xcodeproj</div>
+            </div>
+            <div class="tech-item">
+                <div class="label">URLSession</div>
+                <div class="desc">OpenAI-kompatible HTTP-APIs</div>
+            </div>
+        </div>
+
+        <div class="diagram-card" style="margin-top: 32px;">
+            <h3>UserDefaults &amp; Keychain — Speicher-Layout</h3>
+            <table class="state-table">
+                <thead>
+                    <tr>
+                        <th>Schlüssel</th>
+                        <th>Speicher</th>
+                        <th>Zweck</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Hotkey</td>
+                        <td><code>KeyboardShortcuts</code></td>
+                        <td>Globales Tastenkürzel (Default: ⌥Leertaste)</td>
+                    </tr>
+                    <tr>
+                        <td>activationMode</td>
+                        <td><code>UserDefaults</code></td>
+                        <td>Push-to-Talk oder Toggle</td>
+                    </tr>
+                    <tr>
+                        <td>selectedBackend</td>
+                        <td><code>UserDefaults</code></td>
+                        <td>Lokal (WhisperKit) oder Cloud-API</td>
+                    </tr>
+                    <tr>
+                        <td>Transkription API-Key</td>
+                        <td><code>Keychain: api-key</code></td>
+                        <td>OpenAI/Groq/OpenRouter-Schlüssel für STT</td>
+                    </tr>
+                    <tr>
+                        <td>Korrektur API-Key</td>
+                        <td><code>Keychain: correction-api-key</code></td>
+                        <td>Separater Schlüssel für LLM (optional)</td>
+                    </tr>
+                    <tr>
+                        <td>correctionMode</td>
+                        <td><code>UserDefaults</code></td>
+                        <td>off / grammar / professional / polite / custom</td>
+                    </tr>
+                    <tr>
+                        <td>correctionPrompt_*</td>
+                        <td><code>UserDefaults</code></td>
+                        <td>Eigene Prompts je Modus (überschreibt Default)</td>
+                    </tr>
+                    <tr>
+                        <td>Whisper-Modell</td>
+                        <td><code>~/Documents/huggingface</code></td>
+                        <td>Lokaler CoreML-Modell-Cache (WhisperKit)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>Oratio &middot; Native macOS Diktier-App von Adrian Altner</p>
+        <p style="margin-top: 8px;">Swift &middot; SwiftUI &middot; Apple Silicon &middot; Whisper lokal oder Cloud &middot; Keychain-geschützt</p>
+    </div>
+</footer>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            darkMode: true,
+            background: '#141420',
+            primaryColor: '#2a1a5c',
+            primaryTextColor: '#e8e8ee',
+            primaryBorderColor: '#9e7bff',
+            lineColor: '#9e7bff',
+            secondaryColor: '#1a3a2a',
+            tertiaryColor: '#3a2a1a',
+            fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Text, sans-serif',
+            fontSize: '16px'
+        },
+        flowchart: { curve: 'basis', padding: 20, nodeSpacing: 50, rankSpacing: 60 },
+        stateDiagram: { padding: 20 }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+## xcodegen generiert diese — nicht eingechecken, mit `xcodegen generate` neu bauen
+Oratio.xcodeproj/
+Sources/Generated-Info.plist
+
+## Xcode / Swift Build-Artefakte
+.build/
+.swiftpm/
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+
+## Claude Code / Assistant-Daten (user-lokal)
+.claude/
+
+## IDEs & Editoren
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+## Secrets (Vorsorge — wir nutzen Keychain, aber sicher ist sicher)
+.env
+.env.*
+
+## macOS Noise
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+## Logs & temporäre Dateien
+*.log
+/tmp-*

@@ -1,0 +1,53 @@
+name: Oratio
+options:
+  bundleIdPrefix: org.altner
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+  groupSortPosition: top
+
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit
+    from: "0.9.0"
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.0.0"
+
+targets:
+  Oratio:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources
+      - path: Resources
+    dependencies:
+      - package: WhisperKit
+      - package: KeyboardShortcuts
+    info:
+      path: Sources/Generated-Info.plist
+      properties:
+        LSUIElement: true
+        NSMicrophoneUsageDescription: "Oratio benötigt Mikrofon-Zugriff, um Ihre Sprache in Text umzuwandeln."
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleName: "Oratio"
+        CFBundleDisplayName: "Oratio"
+        CFBundleIconFile: "AppIcon"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.altner.Oratio
+        PRODUCT_NAME: Oratio
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.0"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        ARCHS: arm64
+        ONLY_ACTIVE_ARCH: YES
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: NO
+        ENABLE_APP_SANDBOX: NO
+        GENERATE_INFOPLIST_FILE: NO
